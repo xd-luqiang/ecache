@@ -2,7 +2,7 @@ package redigo
 
 import (
 	"github.com/gomodule/redigo/redis"
-	"github.com/orca-zhang/ecache/dist"
+	"github.com/xd-luqiang/ecache/dist"
 )
 
 type RedigoCli struct {

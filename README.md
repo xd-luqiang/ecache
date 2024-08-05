@@ -3,7 +3,7 @@
 # 🦄 ecache
 <p align="center">
   <a href="#">
-    <img src="https://github.com/orca-zhang/ecache/raw/master/doc/logo.svg">
+    <img src="https://github.com/xd-luqiang/ecache/raw/master/doc/logo.svg">
   </a>
 </p>
 
@@ -11,8 +11,8 @@
   <a href="/go.mod#L3" alt="go version">
     <img src="https://img.shields.io/badge/go%20version-%3E=1.11-brightgreen?style=flat"/>
   </a>
-  <a href="https://goreportcard.com/badge/github.com/orca-zhang/ecache" alt="goreport">
-    <img src="https://goreportcard.com/badge/github.com/orca-zhang/ecache">
+  <a href="https://goreportcard.com/badge/github.com/xd-luqiang/ecache" alt="goreport">
+    <img src="https://goreportcard.com/badge/github.com/xd-luqiang/ecache">
   </a>
   <a href="https://orca-zhang.semaphoreci.com/projects/ecache" alt="buiding status">
     <img src="https://orca-zhang.semaphoreci.com/badges/ecache.svg?style=shields">
@@ -20,7 +20,7 @@
   <a href="https://codecov.io/gh/orca-zhang/ecache" alt="codecov">
     <img src="https://codecov.io/gh/orca-zhang/ecache/branch/master/graph/badge.svg?token=F6LQbADKkq"/>
   </a>
-  <a href="https://github.com/orca-zhang/ecache/blob/master/LICENSE" alt="license MIT">
+  <a href="https://github.com/xd-luqiang/ecache/blob/master/LICENSE" alt="license MIT">
     <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat">
   </a>
   <a href="https://app.fossa.com/projects/git%2Bgithub.com%2Forca-zhang%2Fcache?ref=badge_shield" alt="FOSSA Status">
@@ -50,7 +50,7 @@
       <td></td>
       <td><a href="https://github.com/allegro/bigcache">bigcache</a></td>
       <td><a href="https://github.com/FishGoddess/cachego">cachego</a></td>
-      <td><a href="https://github.com/orca-zhang/ecache"><strong>ecache🌟</strong></a></td>
+      <td><a href="https://github.com/xd-luqiang/ecache"><strong>ecache🌟</strong></a></td>
       <td><a href="https://github.com/coocood/freecache">freecache</a></td>
       <td><a href="https://github.com/bluele/gcache">gcache</a></td>
       <td><a href="https://github.com/patrickmn/go-cache">gocache</a></td>
@@ -189,10 +189,10 @@
    </tr>
 </table>
 
-![](https://github.com/orca-zhang/ecache/raw/master/doc/benchmark.png)
+![](https://github.com/xd-luqiang/ecache/raw/master/doc/benchmark.png)
 
 > gc pause测试结果 [代码由`bigcache`提供](https://github.com/allegro/bigcache-bench)（数值越低越好）
-![](https://github.com/orca-zhang/ecache/raw/master/doc/gc.png)
+![](https://github.com/xd-luqiang/ecache/raw/master/doc/gc.png)
 
 ### 目前正在生产环境大流量验证中
 - [`已验证`]公众号后台(几百QPS)：用户信息、订单信息、配置信息
@@ -206,7 +206,7 @@
 import (
     "time"
 
-    "github.com/orca-zhang/ecache"
+    "github.com/xd-luqiang/ecache"
 )
 ```
 
@@ -238,7 +238,7 @@ c.Del("uid1")
 #### 下载包（预计5秒）
 
 > 非go modules模式：\
-> sh>  ```go get -u github.com/orca-zhang/ecache```
+> sh>  ```go get -u github.com/xd-luqiang/ecache```
 
 > go modules模式：\
 > sh>  ```go mod tidy && go mod download```
@@ -382,7 +382,7 @@ cache.Inspect(func(action int, key string, iface *interface{}, bytes []byte, sta
 ##### 引入stats包
 ``` go
 import (
-    "github.com/orca-zhang/ecache/stats"
+    "github.com/xd-luqiang/ecache/stats"
 )
 ```
 
@@ -411,7 +411,7 @@ stats.Stats().Range(func(k, v interface{}) bool {
 ### 引入dist包
 ``` go
 import (
-    "github.com/orca-zhang/ecache/dist"
+    "github.com/xd-luqiang/ecache/dist"
 )
 ```
 
@@ -430,7 +430,7 @@ var _ = dist.Bind("token", caches...)
 #### go-redis v7及以下版本
 ``` go
 import (
-    "github.com/orca-zhang/ecache/dist/goredis/v7"
+    "github.com/xd-luqiang/ecache/dist/goredis/v7"
 )
 
 dist.Init(goredis.Take(redisCli)) // redisCli是*redis.RedisClient类型
@@ -440,7 +440,7 @@ dist.Init(goredis.Take(redisCli, 100000)) // 第二个参数是channel缓冲区�
 #### go-redis v8及以上版本
 ``` go
 import (
-    "github.com/orca-zhang/ecache/dist/goredis"
+    "github.com/xd-luqiang/ecache/dist/goredis"
 )
 
 dist.Init(goredis.Take(redisCli)) // redisCli是*redis.RedisClient类型
@@ -451,7 +451,7 @@ dist.Init(goredis.Take(redisCli, 100000)) // 第二个参数是channel缓冲区�
 > 注意⚠️`github.com/gomodule/redigo` 要求最低版本 `go 1.14`
 ``` go
 import (
-    "github.com/orca-zhang/ecache/dist/redigo"
+    "github.com/xd-luqiang/ecache/dist/redigo"
 )
 
 dist.Init(redigo.Take(pool)) // pool是*redis.Pool类型
@@ -467,7 +467,7 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 ## 使用[`lrucache`](http://github.com/orca-zhang/lrucache)的老用户升级指导
 
 - 只需四步：
-1. 引入包 `github.com/orca-zhang/lrucache` 改为 `github.com/orca-zhang/ecache`
+1. 引入包 `github.com/orca-zhang/lrucache` 改为 `github.com/xd-luqiang/ecache`
 2. `lrucache.NewSyncCache` 改为 `ecache.NewLRUCache`
 3. 第3个参数从默认的单位秒改为`*time.Second`
 4. `Delete`方法改为`Del`
@@ -519,7 +519,7 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 > `ecache`是[`lrucache`](http://github.com/orca-zhang/lrucache)库的升级版本
 
 - 最下层是用原生map和双链表实现的最基础`LRU`（最久未访问）
-  - PS：我实现的其他版本（[go](https://github.com/orca-zhang/lrucache) / [c++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/ecache.js)）在leetcode都是超越100%的解法
+  - PS：我实现的其他版本（[go](https://github.com/orca-zhang/lrucache) / [c++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/xd-luqiang/ecache.js)）在leetcode都是超越100%的解法
 - 第2层包了分桶策略、并发控制、过期控制（会自动选择2的幂次个桶，便于掩码计算）
 - 第2.5层用很简单的方式实现了`LRU-2`能力，代码不超过20行，直接看源码（搜关键词`LRU-2`）
 

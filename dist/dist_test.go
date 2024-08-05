@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/orca-zhang/ecache"
+	"github.com/xd-luqiang/ecache"
 )
 
 type DIYCli struct {

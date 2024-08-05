@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/orca-zhang/ecache"
+	"github.com/xd-luqiang/ecache"
 )
 
 const topic = "orca-zhang/ecache"
 
-// `RedisCli`` interface used by `dist` component
+// `RedisCli“ interface used by `dist` component
 type RedisCli interface {
 	// if the redis client is ready
 	OK() bool

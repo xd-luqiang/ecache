@@ -3,7 +3,7 @@
 # 🦄 ecache
 <p align="center">
   <a href="#">
-    <img src="https://github.com/orca-zhang/ecache/raw/master/doc/logo.svg">
+    <img src="https://github.com/xd-luqiang/ecache/raw/master/doc/logo.svg">
   </a>
 </p>
 
@@ -11,8 +11,8 @@
   <a href="/go.mod#L3" alt="go version">
     <img src="https://img.shields.io/badge/go%20version-%3E=1.11-brightgreen?style=flat"/>
   </a>
-  <a href="https://goreportcard.com/badge/github.com/orca-zhang/ecache" alt="goreport">
-    <img src="https://goreportcard.com/badge/github.com/orca-zhang/ecache">
+  <a href="https://goreportcard.com/badge/github.com/xd-luqiang/ecache" alt="goreport">
+    <img src="https://goreportcard.com/badge/github.com/xd-luqiang/ecache">
   </a>
   <a href="https://orca-zhang.semaphoreci.com/projects/ecache" alt="buiding status">
     <img src="https://orca-zhang.semaphoreci.com/badges/ecache.svg?style=shields">
@@ -20,7 +20,7 @@
   <a href="https://codecov.io/gh/orca-zhang/ecache" alt="codecov">
     <img src="https://codecov.io/gh/orca-zhang/ecache/branch/master/graph/badge.svg?token=F6LQbADKkq"/>
   </a>
-  <a href="https://github.com/orca-zhang/ecache/blob/master/LICENSE" alt="license MIT">
+  <a href="https://github.com/xd-luqiang/ecache/blob/master/LICENSE" alt="license MIT">
     <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat">
   </a>
   <a href="https://app.fossa.com/projects/git%2Bgithub.com%2Forca-zhang%2Fcache?ref=badge_shield" alt="FOSSA Status">
@@ -50,7 +50,7 @@
       <td></td>
       <td><a href="https://github.com/allegro/bigcache">bigcache</a></td>
       <td><a href="https://github.com/FishGoddess/cachego">cachego</a></td>
-      <td><a href="https://github.com/orca-zhang/ecache"><strong>ecache🌟</strong></a></td>
+      <td><a href="https://github.com/xd-luqiang/ecache"><strong>ecache🌟</strong></a></td>
       <td><a href="https://github.com/coocood/freecache">freecache</a></td>
       <td><a href="https://github.com/bluele/gcache">gcache</a></td>
       <td><a href="https://github.com/patrickmn/go-cache">gocache</a></td>
@@ -189,10 +189,10 @@
    </tr>
 </table>
 
-![](https://github.com/orca-zhang/ecache/raw/master/doc/benchmark.png)
+![](https://github.com/xd-luqiang/ecache/raw/master/doc/benchmark.png)
 
 > gc pause test result [code provided by `bigcache`](https://github.com/allegro/bigcache-bench) (the lower the better)
-![](https://github.com/orca-zhang/ecache/raw/master/doc/gc.png)
+![](https://github.com/xd-luqiang/ecache/raw/master/doc/gc.png)
 
 ### Stablity validation in production environment
 - [`Confirmed`]Official Account Backend(hundreds QPS), user & order info, configrations.
@@ -206,7 +206,7 @@
 import (
     "time"
 
-    "github.com/orca-zhang/ecache"
+    "github.com/xd-luqiang/ecache"
 )
 ```
 
@@ -238,7 +238,7 @@ c.Del("uid1")
 #### Download Package (almost 5s)
 
 > non-go modules mode:\
-> sh>  ```go get -u github.com/orca-zhang/ecache```
+> sh>  ```go get -u github.com/xd-luqiang/ecache```
 
 > go modules mode:\
 > sh>  ```go mod tidy && go mod download```
@@ -382,7 +382,7 @@ cache.Inspect(func(action int, key string, iface *interface{}, bytes []byte, sta
 ##### Import the `stats` package
 ``` go
 import (
-    "github.com/orca-zhang/ecache/stats"
+    "github.com/xd-luqiang/ecache/stats"
 )
 ```
 
@@ -411,7 +411,7 @@ stats.Stats().Range(func(k, v interface{}) bool {
 ### Import the `dist` package
 ``` go
 import (
-    "github.com/orca-zhang/ecache/dist"
+    "github.com/xd-luqiang/ecache/dist"
 )
 ```
 
@@ -430,7 +430,7 @@ var _ = dist.Bind("token", caches...)
 #### go-redis v7 and below
 ``` go
 import (
-    "github.com/orca-zhang/ecache/dist/goredis/v7"
+    "github.com/xd-luqiang/ecache/dist/goredis/v7"
 )
 
 dist.Init(goredis.Take(redisCli)) // redisCli is *redis.RedisClient type
@@ -440,7 +440,7 @@ dist.Init(goredis.Take(redisCli, 100000)) // Second parameter is size of channel
 #### go-redis v8 and above
 ``` go
 import (
-    "github.com/orca-zhang/ecache/dist/goredis"
+    "github.com/xd-luqiang/ecache/dist/goredis"
 )
 
 dist.Init(goredis.Take(redisCli)) // redisCli is *redis.RedisClient type
@@ -451,7 +451,7 @@ dist.Init(goredis.Take(redisCli, 100000)) // Second parameter is size of channel
 > Note:⚠️ `github.com/gomodule/redigo` requires minimum version `go 1.14`
 ``` go
 import (
-    "github.com/orca-zhang/ecache/dist/redigo"
+    "github.com/xd-luqiang/ecache/dist/redigo"
 )
 
 dist.Init(redigo.Take(pool)) // pool is of *redis.Pool type
@@ -467,7 +467,7 @@ dist.OnDel("user", "uid1") // user is name of pool, uid1 is the key that want to
 ## Update guide for old [`lrucache`](http://github.com/orca-zhang/lrucache) fans
 
 - Only four steps:
-1. Import `github.com/orca-zhang/ecache` instead of `github.com/orca-zhang/lrucache`
+1. Import `github.com/xd-luqiang/ecache` instead of `github.com/orca-zhang/lrucache`
 2. `ecache.NewLRUCache` instead of `lrucache.NewSyncCache`
 3. Third parameter should add unit `*time.Second`
 4. `Delete` method replace to `Del`
@@ -519,7 +519,7 @@ dist.OnDel("user", "uid1") // user is name of pool, uid1 is the key that want to
 > `ecache` is an upgraded version of the [`lrucache`](http://github.com/orca-zhang/lrucache) library
 
 - Bottom layer is the most basic `LRU` implemented with native map and double-linked lists (the longest not visited)
-   - PS: All other versions I implemented ([go](https://github.com/orca-zhang/lrucache) / [c++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/ecache.js)) in leetcode are solutions beats 100% submissions.
+   - PS: All other versions I implemented ([go](https://github.com/orca-zhang/lrucache) / [c++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/xd-luqiang/ecache.js)) in leetcode are solutions beats 100% submissions.
 - Second layer includes bucketing strategy, concurrency control, and expiration control (it will automatically adapt to power-of-two buckets to facilitate mask calculation)
 - The 2.5 layer implements the `LRU-2` ability in a very simple way, the code does not exceed 20 lines, directly look at the source code (search for the keyword `LRU-2`)
 

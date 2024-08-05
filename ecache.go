@@ -75,7 +75,7 @@ func (c *cache) put(k string, i *interface{}, b []byte, expireAt int64, on inspe
 		}
 		delete(c.hmap, (*tail).k)
 		c.hmap[k], (*tail).k, (*tail).v.i, (*tail).v.b, (*tail).expireAt = c.dlnk[0][p], k, i, b, expireAt // reuse to reduce gc
-		c.adjust(c.dlnk[0][p], p, n)                                                                        // refresh to head
+		c.adjust(c.dlnk[0][p], p, n)                                                                       // refresh to head
 		return 1
 	}
 
@@ -102,7 +102,7 @@ func (c *cache) get(k string) (*node, int) {
 func (c *cache) del(k string) (_ *node, _ int, e int64) {
 	if x, ok := c.hmap[k]; ok && c.m[x-1].expireAt > 0 {
 		c.m[x-1].expireAt, e = 0, c.m[x-1].expireAt // mark as deleted
-		c.adjust(x, n, p)                            // sink to tail
+		c.adjust(x, n, p)                           // sink to tail
 		return &c.m[x-1], 1, e
 	}
 	return nil, 0, 0
@@ -129,6 +129,7 @@ type Cache struct {
 	locks      []sync.Mutex
 	insts      [][2]*cache // level-0 for normal LRU, level-1 for LRU-2
 	expiration time.Duration
+	protect    time.Duration
 	on         inspector
 	mask       int32
 }
@@ -139,12 +140,20 @@ type Cache struct {
 // optional `expiration` is item alive time (and we only use lazy eviction here), default `0` stands for permanent
 func NewLRUCache(bucketCnt, capPerBkt uint16, expiration ...time.Duration) *Cache {
 	mask := maskOfNextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.Mutex, mask+1), make([][2]*cache, mask+1), 0, func(int, string, *interface{}, []byte, int) {}, int32(mask)}
+	c := &Cache{make([]sync.Mutex, mask+1), make([][2]*cache, mask+1), 0, 0, func(int, string, *interface{}, []byte, int) {}, int32(mask)}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
 	}
 	if len(expiration) > 0 {
 		c.expiration = expiration[0]
+	}
+	if len(expiration) > 1 {
+		c.protect = expiration[1]
+	} else {
+		c.protect = c.expiration / 2
+		if c.protect <= 0 {
+			c.protect = 3 * time.Second
+		}
 	}
 	return c
 }
@@ -160,9 +169,13 @@ func (c *Cache) LRU2(capPerBkt uint16) *Cache {
 
 // put - put a item into cache
 func (c *Cache) put(key string, i *interface{}, b []byte) {
+	var expireAt int64 = now() + int64(c.expiration)
+	if i == nil && b == nil {
+		expireAt = now() + int64(c.protect)
+	}
 	idx := hashBKRD(key) & c.mask
 	c.locks[idx].Lock()
-	status := c.insts[idx][0].put(key, i, b, now()+int64(c.expiration), c.on)
+	status := c.insts[idx][0].put(key, i, b, expireAt, c.on)
 	c.locks[idx].Unlock()
 	c.on(PUT, key, i, b, status)
 }
@@ -281,7 +294,8 @@ const (
 )
 
 // inspector - can be used to statistics cache hit/miss rate or other scenario like ringbuf queue
-//   more details about every parameter: https://github.com/orca-zhang/ecache/blob/master/README_en.md#inject-an-inspector
+//
+//	more details about every parameter: https://github.com/xd-luqiang/ecache/blob/master/README_en.md#inject-an-inspector
 type inspector func(action int, key string, iface *interface{}, bytes []byte, status int)
 
 // Inspect - to inspect the actions

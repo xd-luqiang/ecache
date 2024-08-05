@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/orca-zhang/ecache"
+	"github.com/xd-luqiang/ecache"
 )
 
 var m sync.Map
@@ -42,10 +42,10 @@ func Bind(pool string, caches ...*ecache.Cache) error {
 // `k` is categoy, type is string
 // `v` is node, type is `*stats.StatsNode`
 //
-// 	stats.Stats().Range(func(k, v interface{}) bool {
-//     	fmt.Println("stats:", k, v)
-//     	return true
-// 	})
+//		stats.Stats().Range(func(k, v interface{}) bool {
+//	    	fmt.Println("stats:", k, v)
+//	    	return true
+//		})
 func Stats() *sync.Map {
 	return &m
 }

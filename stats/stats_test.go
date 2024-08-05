@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/orca-zhang/ecache"
+	"github.com/xd-luqiang/ecache"
 )
 
 func TestLRU2Cache(t *testing.T) {

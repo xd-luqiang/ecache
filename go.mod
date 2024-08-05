@@ -1,4 +1,4 @@
-module github.com/orca-zhang/ecache
+module github.com/xd-luqiang/ecache
 
 go 1.14
 
