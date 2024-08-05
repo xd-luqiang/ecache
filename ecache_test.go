@@ -339,7 +339,7 @@ func TestMaskOfNextPowOf2(t *testing.T) {
 }
 
 func TestExpiration(t *testing.T) {
-	lc := NewLRUCache(2, 1)
+	lc := NewLRUCache(2, 2, 3*time.Second)
 	lc.Put("1", "2")
 	lc.Put("2", nil)
 	// if v, ok := lc.Get("1"); !ok || v != "2" {
@@ -347,12 +347,21 @@ func TestExpiration(t *testing.T) {
 	// }
 	fmt.Println(lc.Get("1"))
 	fmt.Println(lc.Get("2"))
-	time.Sleep(4 * time.Second)
+	time.Sleep(3 * time.Second)
 	fmt.Println(lc.Get("1"))
 	fmt.Println(lc.Get("2"))
 	// if _, ok := lc.Get("1"); ok {
 	// 	t.Error("case 2 failed")
 	// }
+	cnt := 0
+	for i := 0; i < 50; i++ {
+		lc.Put("1", "2")
+		time.Sleep(3 * time.Second)
+		if _, ok := lc.Get("1"); ok {
+			cnt += 1
+		}
+	}
+	fmt.Println(cnt)
 
 	// permanent
 	// lc2 := NewLRUCache(2, 1, 0)

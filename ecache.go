@@ -2,6 +2,7 @@ package ecache
 
 import (
 	"encoding/binary"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -132,6 +133,8 @@ type Cache struct {
 	protect    time.Duration
 	on         inspector
 	mask       int32
+
+	minExpire, maxExpire int64
 }
 
 // NewLRUCache - create lru cache
@@ -140,12 +143,19 @@ type Cache struct {
 // optional `expiration` is item alive time (and we only use lazy eviction here), default `0` stands for permanent
 func NewLRUCache(bucketCnt, capPerBkt uint16, expiration ...time.Duration) *Cache {
 	mask := maskOfNextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.Mutex, mask+1), make([][2]*cache, mask+1), 0, 0, func(int, string, *interface{}, []byte, int) {}, int32(mask)}
+	c := &Cache{locks: make([]sync.Mutex, mask+1),
+		insts: make([][2]*cache, mask+1),
+		on:    func(int, string, *interface{}, []byte, int) {},
+		mask:  int32(mask),
+	}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
 	}
 	if len(expiration) > 0 {
 		c.expiration = expiration[0]
+		delta := int64(c.expiration) / 10 * 2
+		c.minExpire = int64(c.expiration) - delta
+		c.maxExpire = int64(c.expiration) + delta
 	}
 	if len(expiration) > 1 {
 		c.protect = expiration[1]
@@ -169,7 +179,8 @@ func (c *Cache) LRU2(capPerBkt uint16) *Cache {
 
 // put - put a item into cache
 func (c *Cache) put(key string, i *interface{}, b []byte) {
-	var expireAt int64 = now() + int64(c.expiration)
+	r := rand.New(rand.NewSource(now()))
+	var expireAt int64 = now() + r.Int63n(c.maxExpire-c.minExpire+1) + c.minExpire
 	if *i == nil && b == nil {
 		expireAt = now() + int64(c.protect)
 	}
