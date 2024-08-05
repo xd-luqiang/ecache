@@ -170,7 +170,7 @@ func (c *Cache) LRU2(capPerBkt uint16) *Cache {
 // put - put a item into cache
 func (c *Cache) put(key string, i *interface{}, b []byte) {
 	var expireAt int64 = now() + int64(c.expiration)
-	if i == nil && b == nil {
+	if *i == nil && b == nil {
 		expireAt = now() + int64(c.protect)
 	}
 	idx := hashBKRD(key) & c.mask
@@ -226,7 +226,7 @@ func (c *Cache) GetInt64(key string) (int64, bool) {
 }
 
 func (c *Cache) _get(key string, idx, level int32) (*node, int) {
-	if n, s := c.insts[idx][level].get(key); s > 0 && n.expireAt > 0 && (c.expiration <= 0 || now() < n.expireAt) {
+	if n, s := c.insts[idx][level].get(key); s > 0 && n.expireAt > 0 && (now() < n.expireAt) {
 		return n, s // no necessary to remove the expired item here, otherwise will cause GC thrashing
 	}
 	return nil, 0
