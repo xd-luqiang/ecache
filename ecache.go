@@ -140,7 +140,8 @@ type QueryBucket struct {
 	// InterfaceVals []*interface{}
 	// ByteVals      [][]byte
 	// Founds           []bool
-	MissKeys []string
+	MissKeys       []string
+	MissKeyIndexes []int
 }
 
 // Cache - concurrent cache structure
@@ -297,9 +298,9 @@ func (c *Cache) PutInt64(key string, d int64) {
 // PutBytes - put a bytes item into cache
 func (c *Cache) PutBytes(key string, b []byte) { c.put(key, nil, b) }
 
-func (c *Cache) MGet(keys []string) ([]interface{}, []string) {
-	is, _, _, miss := c.mget(keys)
-	return is, miss
+func (c *Cache) MGet(keys []string) ([]interface{}, []bool, []string, []int) {
+	is, _, found, miss, missIndex := c.mget(keys)
+	return is, found, miss, missIndex
 }
 
 // Get - get value of key from cache with result
@@ -333,7 +334,7 @@ func (c *Cache) _get(key string, idx, level int32) (*node, int) {
 	return nil, 0
 }
 
-func (c *Cache) mget(keys []string) (is []interface{}, bs [][]byte, found []bool, miss []string) {
+func (c *Cache) mget(keys []string) (is []interface{}, bs [][]byte, found []bool, miss []string, missIndex []int) {
 	queryMap := make(map[int32]*QueryBucket)
 	for i, key := range keys {
 		idx := hashBKRD(key) & c.mask
@@ -380,6 +381,7 @@ func (c *Cache) mget(keys []string) (is []interface{}, bs [][]byte, found []bool
 				}
 				if s <= 0 {
 					qBucket.MissKeys = append(qBucket.MissKeys, key)
+					qBucket.MissKeyIndexes = append(qBucket.MissKeyIndexes, qBucket.Indexes[i])
 					c.on(GET, key, nil, nil, 0)
 					continue
 				}
@@ -394,9 +396,10 @@ func (c *Cache) mget(keys []string) (is []interface{}, bs [][]byte, found []bool
 	wg.Wait()
 	for _, qb := range queryMap {
 		miss = append(miss, qb.MissKeys...)
+		missIndex = append(missIndex, qb.MissKeyIndexes...)
 		c.queryBucketPool.Put(qb)
 	}
-	return is, bs, found, miss
+	return is, bs, found, miss, missIndex
 }
 
 func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {

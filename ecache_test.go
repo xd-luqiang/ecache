@@ -665,9 +665,11 @@ func TestM(t *testing.T) {
 	}
 	ivals[len(vals)] = nil
 	lc.MPut(keys, ivals)
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	qkeys := []string{"7", "1", "36", "1", "5", "3", "8", "0", "9", "10", "11"}
-	qvals, miss := lc.MGet(qkeys)
+	qvals, found, miss, missIndex := lc.MGet(qkeys)
 	fmt.Println(qvals)
+	fmt.Println(found)
 	fmt.Println(miss)
+	fmt.Println(missIndex)
 }
