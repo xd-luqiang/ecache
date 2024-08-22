@@ -637,3 +637,37 @@ func TestForIssue7(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestM(t *testing.T) {
+	lc := NewLRUCache(4, 65535, 1*time.Second)
+	// var wg sync.WaitGroup
+	// for index := 0; index < 1000000; index++ {
+	// 	wg.Add(3)
+	// 	go func() {
+	// 		lc.Put("1", "2")
+	// 		wg.Done()
+	// 	}()
+	// 	go func() {
+	// 		lc.Get("1")
+	// 		wg.Done()
+	// 	}()
+	// 	go func() {
+	// 		lc.Del("1")
+	// 		wg.Done()
+	// 	}()
+	// }
+	// wg.Wait()
+	keys := []string{"1", "2", "3", "4", "5", "6", "1", "8", "9", "10", "11"}
+	vals := []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
+	ivals := make([]interface{}, len(vals)+1)
+	for i, v := range vals {
+		ivals[i] = v
+	}
+	ivals[len(vals)] = nil
+	lc.MPut(keys, ivals)
+	time.Sleep(1000 * time.Millisecond)
+	qkeys := []string{"7", "1", "36", "1", "5", "3", "8", "0", "9", "10", "11"}
+	qvals, miss := lc.MGet(qkeys)
+	fmt.Println(qvals)
+	fmt.Println(miss)
+}

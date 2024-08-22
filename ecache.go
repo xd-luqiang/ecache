@@ -2,6 +2,7 @@ package ecache
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -99,6 +100,13 @@ func (c *cache) get(k string) (*node, int) {
 	return nil, 0
 }
 
+func (c *cache) _get(key string) (*node, int) {
+	if n, s := c.get(key); s > 0 && n.expireAt > 0 && (now() < n.expireAt) {
+		return n, s // no necessary to remove the expired item here, otherwise will cause GC thrashing
+	}
+	return nil, 0
+}
+
 // delete item by key from lru cache
 func (c *cache) del(k string) (_ *node, _ int, e int64) {
 	if x, ok := c.hmap[k]; ok && c.m[x-1].expireAt > 0 {
@@ -125,6 +133,16 @@ func (c *cache) adjust(idx, f, t uint16) {
 	}
 }
 
+type QueryBucket struct {
+	Caches  [2]*cache
+	Keys    []string
+	Indexes []int
+	// InterfaceVals []*interface{}
+	// ByteVals      [][]byte
+	// Founds           []bool
+	MissKeys []string
+}
+
 // Cache - concurrent cache structure
 type Cache struct {
 	locks      []sync.Mutex
@@ -135,6 +153,7 @@ type Cache struct {
 	mask       int32
 
 	minExpire, maxExpire int64
+	queryBucketPool      *sync.Pool
 }
 
 // NewLRUCache - create lru cache
@@ -147,6 +166,11 @@ func NewLRUCache(bucketCnt, capPerBkt uint16, expiration ...time.Duration) *Cach
 		insts: make([][2]*cache, mask+1),
 		on:    func(int, string, *interface{}, []byte, int) {},
 		mask:  int32(mask),
+		queryBucketPool: &sync.Pool{
+			New: func() interface{} {
+				return &QueryBucket{}
+			},
+		},
 	}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
@@ -178,6 +202,63 @@ func (c *Cache) LRU2(capPerBkt uint16) *Cache {
 }
 
 // put - put a item into cache
+func (c *Cache) mput(keys []string, is []interface{}, bs [][]byte) {
+	putMap := make(map[int32]*QueryBucket)
+	for i, key := range keys {
+		idx := hashBKRD(key) & c.mask
+		if curQBucket, ok := putMap[idx]; !ok || curQBucket == nil {
+			curQBucket = c.queryBucketPool.Get().(*QueryBucket)
+			curQBucket.Caches = c.insts[idx]
+			curQBucket.Keys = []string{key}
+			curQBucket.Indexes = []int{i}
+			putMap[idx] = curQBucket
+		} else {
+			curQBucket.Keys = append(curQBucket.Keys, key)
+			curQBucket.Indexes = append(curQBucket.Indexes, i)
+		}
+	}
+	// for k, v := range putMap {
+	// 	fmt.Println(k, v.Keys)
+	// }
+	r := rand.New(rand.NewSource(now()))
+	wg := sync.WaitGroup{}
+	wg.Add(len(putMap))
+	for pbi := range putMap {
+		go func(pbi int32) {
+			defer func() {
+				if pac := recover(); pac != nil {
+					fmt.Println("panic:", pac)
+				}
+			}()
+			defer wg.Done()
+			curPBucket := putMap[pbi]
+			c.locks[pbi].Lock()
+			for i, key := range curPBucket.Keys {
+				var expireAt int64 = now() + r.Int63n(c.maxExpire-c.minExpire+1) + c.minExpire
+				ival, bval := (interface{})(nil), []byte(nil)
+				if is != nil && i < len(is) {
+					ival = is[curPBucket.Indexes[i]]
+				}
+				if bs != nil && i < len(bs) {
+					bval = bs[curPBucket.Indexes[i]]
+				}
+				if ival == nil && bval == nil {
+					expireAt = now() + int64(c.protect)
+				}
+				status := curPBucket.Caches[0].put(key, &ival, bval, expireAt, c.on)
+				// fmt.Println(key, ival, expireAt-s)
+				c.on(PUT, key, &ival, bval, status)
+			}
+			c.locks[pbi].Unlock()
+		}(pbi)
+	}
+	wg.Wait()
+	for _, pb := range putMap {
+		c.queryBucketPool.Put(pb)
+	}
+}
+
+// put - put a item into cache
 func (c *Cache) put(key string, i *interface{}, b []byte) {
 	r := rand.New(rand.NewSource(now()))
 	var expireAt int64 = now() + r.Int63n(c.maxExpire-c.minExpire+1) + c.minExpire
@@ -199,6 +280,10 @@ func ToInt64(b []byte) (int64, bool) {
 	return 0, false
 }
 
+func (c *Cache) MPut(keys []string, vals []interface{}) {
+	c.mput(keys, vals, nil)
+}
+
 // Put - put an item into cache
 func (c *Cache) Put(key string, val interface{}) { c.put(key, &val, nil) }
 
@@ -211,6 +296,11 @@ func (c *Cache) PutInt64(key string, d int64) {
 
 // PutBytes - put a bytes item into cache
 func (c *Cache) PutBytes(key string, b []byte) { c.put(key, nil, b) }
+
+func (c *Cache) MGet(keys []string) ([]interface{}, []string) {
+	is, _, _, miss := c.mget(keys)
+	return is, miss
+}
 
 // Get - get value of key from cache with result
 func (c *Cache) Get(key string) (interface{}, bool) {
@@ -241,6 +331,72 @@ func (c *Cache) _get(key string, idx, level int32) (*node, int) {
 		return n, s // no necessary to remove the expired item here, otherwise will cause GC thrashing
 	}
 	return nil, 0
+}
+
+func (c *Cache) mget(keys []string) (is []interface{}, bs [][]byte, found []bool, miss []string) {
+	queryMap := make(map[int32]*QueryBucket)
+	for i, key := range keys {
+		idx := hashBKRD(key) & c.mask
+		if curQBucket, ok := queryMap[idx]; !ok || curQBucket == nil {
+			curQBucket = c.queryBucketPool.Get().(*QueryBucket)
+			curQBucket.Caches = c.insts[idx]
+			curQBucket.Keys = []string{key}
+			curQBucket.Indexes = []int{i}
+			curQBucket.MissKeys = make([]string, 0)
+			queryMap[idx] = curQBucket
+		} else {
+			curQBucket.Keys = append(curQBucket.Keys, key)
+			curQBucket.Indexes = append(curQBucket.Indexes, i)
+		}
+	}
+	// for k, v := range queryMap {
+	// 	fmt.Println(k, v.Keys)
+	// }
+	is, bs, found = make([]interface{}, len(keys)), make([][]byte, len(keys)), make([]bool, len(keys))
+	wg := sync.WaitGroup{}
+	wg.Add(len(queryMap))
+	for qbi := range queryMap {
+		go func(qbi int32) {
+			defer func() {
+				if pac := recover(); pac != nil {
+					fmt.Println("panic:", pac)
+				}
+			}()
+			defer wg.Done()
+			c.locks[qbi].Lock()
+			qBucket := queryMap[qbi]
+			qBucket.MissKeys = make([]string, 0)
+			for i, key := range qBucket.Keys {
+				n, s := (*node)(nil), 0
+				if qBucket.Caches[1] == nil { // (if LRU-2 mode not support, loss is little)
+					n, s = qBucket.Caches[0]._get(key) // normal lru mode
+				} else { // LRU-2 mode
+					e := int64(0)
+					if n, s, e = qBucket.Caches[0].del(key); s <= 0 {
+						n, s = qBucket.Caches[1]._get(key) // re-find in level-1
+					} else {
+						qBucket.Caches[1].put(key, n.v.i, n.v.b, e, c.on) // find in level-0, move to level-1
+					}
+				}
+				if s <= 0 {
+					qBucket.MissKeys = append(qBucket.MissKeys, key)
+					c.on(GET, key, nil, nil, 0)
+					continue
+				}
+				is[qBucket.Indexes[i]], bs[qBucket.Indexes[i]] = *(n.v.i), n.v.b
+				// fmt.Println(key, *(n.v.i))
+				found[qBucket.Indexes[i]] = true
+				c.on(GET, key, n.v.i, n.v.b, 1)
+			}
+			c.locks[qbi].Unlock()
+		}(qbi)
+	}
+	wg.Wait()
+	for _, qb := range queryMap {
+		miss = append(miss, qb.MissKeys...)
+		c.queryBucketPool.Put(qb)
+	}
+	return is, bs, found, miss
 }
 
 func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {
