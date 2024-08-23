@@ -344,6 +344,7 @@ func (c *Cache) mget(keys []string) (is []interface{}, bs [][]byte, found []bool
 			curQBucket.Keys = []string{key}
 			curQBucket.Indexes = []int{i}
 			curQBucket.MissKeys = make([]string, 0)
+			curQBucket.MissKeyIndexes = make([]int, 0)
 			queryMap[idx] = curQBucket
 		} else {
 			curQBucket.Keys = append(curQBucket.Keys, key)
@@ -366,7 +367,6 @@ func (c *Cache) mget(keys []string) (is []interface{}, bs [][]byte, found []bool
 			defer wg.Done()
 			c.locks[qbi].Lock()
 			qBucket := queryMap[qbi]
-			qBucket.MissKeys = make([]string, 0)
 			for i, key := range qBucket.Keys {
 				n, s := (*node)(nil), 0
 				if qBucket.Caches[1] == nil { // (if LRU-2 mode not support, loss is little)
